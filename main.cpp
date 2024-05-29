@@ -1,59 +1,44 @@
-#include "opencv2/imgproc.hpp"
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/highgui.hpp"
- 
+#include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/highgui.hpp>
+#include <iostream>
+#include <stdio.h>
 using namespace cv;
- 
-// Declare the variables
-Mat src, dst;
-int top, bottom, left, right;
-int borderType = BORDER_CONSTANT;
-const char* window_name = "copyMakeBorder Demo";
-RNG rng(12345);
- 
-int main( int argc, char** argv )
+using namespace std;
+int main(int, char**)
 {
- const char* imageName = argc >=2 ? argv[1] : "lena.jpg";
- 
- // Loads an image
- src = imread( samples::findFile( imageName ), IMREAD_COLOR ); // Load an image
- 
- // Check if image is loaded fine
- if( src.empty()) {
- printf(" Error opening image\n");
- printf(" Program Arguments: [image_name -- default lena.jpg] \n");
+ Mat frame;
+ //--- INITIALIZE VIDEOCAPTURE
+ VideoCapture cap;
+ // open the default camera using default API
+ // cap.open(0);
+ // OR advance usage: select any API backend
+ int deviceID = 0; // 0 = open default camera
+ int apiID = cv::CAP_ANY; // 0 = autodetect default API
+ // open selected camera using selected API
+ cap.open(deviceID, apiID);
+ // check if we succeeded
+ if (!cap.isOpened()) {
+ cerr << "ERROR! Unable to open camera\n";
  return -1;
  }
- 
- // Brief how-to for this program
- printf( "\n \t copyMakeBorder Demo: \n" );
- printf( "\t -------------------- \n" );
- printf( " ** Press 'c' to set the border to a random constant value \n");
- printf( " ** Press 'r' to set the border to be replicated \n");
- printf( " ** Press 'ESC' to exit the program \n");
- 
- namedWindow( window_name, WINDOW_AUTOSIZE );
- 
- // Initialize arguments for the filter
- top = (int) (0.05*src.rows); bottom = top;
- left = (int) (0.05*src.cols); right = left;
- 
- for(;;)
+ //--- GRAB AND WRITE LOOP
+ cout << "Start grabbing" << endl
+ << "Press any key to terminate" << endl;
+ for (;;)
  {
- Scalar value( rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255) );
- 
- copyMakeBorder( src, dst, top, bottom, left, right, borderType, value );
- 
- imshow( window_name, dst );
- 
- char c = (char)waitKey(500);
- if( c == 27 )
- { break; }
- else if( c == 'c' )
- { borderType = BORDER_CONSTANT; }
- else if( c == 'r' )
- { borderType = BORDER_REPLICATE; }
+ // wait for a new frame from camera and store it into 'frame'
+ cap.read(frame);
+ // check if we succeeded
+ if (frame.empty()) {
+ cerr << "ERROR! blank frame grabbed\n";
+ break;
  }
- 
+ // show live and wait for a key with timeout long enough to show images
+ imshow("Live", frame);
+ if (waitKey(5) >= 0)
+ break;
+ }
+ // the camera will be deinitialized automatically in VideoCapture destructor
  return 0;
 }
